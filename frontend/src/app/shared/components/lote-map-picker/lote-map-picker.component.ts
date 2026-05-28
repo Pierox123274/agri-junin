@@ -36,6 +36,10 @@ export class LoteMapPickerComponent implements OnInit, OnDestroy {
 
   protected readonly loading = signal(true);
   protected readonly mapError = signal<string | null>(null);
+  protected readonly manualMode = signal(false);
+  protected readonly manualLat = signal('');
+  protected readonly manualLng = signal('');
+  protected readonly manualUbicacion = signal('');
   protected readonly routeInfo = signal<MapsDirections | null>(null);
   protected readonly coordsLabel = signal('');
 
@@ -45,18 +49,50 @@ export class LoteMapPickerComponent implements OnInit, OnDestroy {
   private centro = { lat: -12.06513, lng: -75.20486 };
 
   ngOnInit(): void {
+    const lat0 = this.latitudInicial();
+    const lng0 = this.longitudInicial();
+    if (lat0 != null) this.manualLat.set(String(lat0));
+    if (lng0 != null) this.manualLng.set(String(lng0));
+    if (this.ubicacionInicial()) this.manualUbicacion.set(this.ubicacionInicial());
+
     this.mapsApi.getConfig().subscribe({
       next: (res) => {
         this.centro = res.data.centro;
+        if (res.data.mapAvailable === false || !res.data.apiKey?.trim()) {
+          this.manualMode.set(true);
+          this.loading.set(false);
+          this.mapError.set(
+            res.data.mensaje || 'Mapa no disponible. Ingrese latitud y longitud manualmente.'
+          );
+          return;
+        }
         loadGoogleMaps(res.data.apiKey)
           .then(() => this.initMap())
-          .catch(() => this.mapError.set('No se pudo cargar el mapa. Verifique GOOGLE_MAPS_API_KEY.'));
+          .catch(() => {
+            this.manualMode.set(true);
+            this.loading.set(false);
+            this.mapError.set('No se pudo cargar Google Maps. Use coordenadas manuales.');
+          });
       },
       error: (err) => {
+        this.manualMode.set(true);
         this.loading.set(false);
         this.mapError.set(err?.error?.message || 'Mapas no disponibles en el servidor');
       },
     });
+  }
+
+  aplicarManual(): void {
+    const lat = parseFloat(this.manualLat());
+    const lng = parseFloat(this.manualLng());
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      this.mapError.set('Latitud y longitud deben ser números válidos');
+      return;
+    }
+    const ubicacion = this.manualUbicacion().trim() || `${lat}, ${lng}`;
+    this.coordsLabel.set(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    this.mapError.set(null);
+    this.ubicacionChange.emit({ latitud: lat, longitud: lng, ubicacion });
   }
 
   ngOnDestroy(): void {

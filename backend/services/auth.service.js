@@ -22,7 +22,7 @@ const generateToken = (user) =>
   jwt.sign(
     { id: user.id, email: user.email, rol: user.rol, nombre: user.nombre },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();

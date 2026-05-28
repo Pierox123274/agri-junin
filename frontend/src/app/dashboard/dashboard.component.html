@@ -34,6 +34,12 @@
 
   @if (loading()) {
     <p class="loading">Cargando estadísticas...</p>
+  } @else if (error()) {
+    <div class="alert alert--error dashboard__error">
+      <strong>No se pudo cargar el panel</strong>
+      <p>{{ error() }}</p>
+      <button type="button" class="btn btn--primary btn--sm" (click)="dash.load()">Reintentar</button>
+    </div>
   } @else if (stats(); as s) {
     @if (s.climaHuancayo) {
       <div class="dashboard__clima">

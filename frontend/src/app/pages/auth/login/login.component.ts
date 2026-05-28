@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -9,13 +9,22 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  ngOnInit(): void {
+    const expired = this.route.snapshot.queryParamMap.get('expired');
+    const msg = this.route.snapshot.queryParamMap.get('msg');
+    if (expired === '1' && msg) {
+      this.error.set(msg);
+    }
+  }
 
   form = this.fb.nonNullable.group({
     login: ['', [Validators.required, this.loginValidator]],

@@ -10,10 +10,30 @@
   </div>
 
   @if (mapError()) {
-    <div class="map-alert map-alert--error">{{ mapError() }}</div>
+    <div class="map-alert" [class.map-alert--error]="!manualMode()" [class.map-alert--warn]="manualMode()">
+      {{ mapError() }}
+    </div>
   }
 
-  <div class="map-wrap">
+  @if (manualMode()) {
+    <div class="map-manual form-grid">
+      <div class="form-group">
+        <label>Latitud</label>
+        <input type="number" step="any" [value]="manualLat()" (input)="manualLat.set($any($event.target).value)" placeholder="-12.06513" />
+      </div>
+      <div class="form-group">
+        <label>Longitud</label>
+        <input type="number" step="any" [value]="manualLng()" (input)="manualLng.set($any($event.target).value)" placeholder="-75.20486" />
+      </div>
+      <div class="form-group full">
+        <label>Descripción / dirección</label>
+        <input type="text" [value]="manualUbicacion()" (input)="manualUbicacion.set($any($event.target).value)" placeholder="Sector, distrito..." />
+      </div>
+      <button type="button" class="btn btn--primary btn--sm" (click)="aplicarManual()">Aplicar ubicación</button>
+    </div>
+  }
+
+  <div class="map-wrap" [class.map-wrap--hidden]="manualMode()">
     @if (loading()) {
       <p class="map-loading">Cargando mapa...</p>
     }

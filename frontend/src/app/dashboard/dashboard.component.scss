@@ -12,6 +12,11 @@
     }
   }
 
+  &__error {
+    margin: 1rem 0;
+    p { margin: 0.5rem 0; }
+  }
+
   &__intro {
     margin-bottom: 1.5rem;
     h2 {

@@ -245,6 +245,8 @@ export interface ClimaHuancayo {
 
 export interface MapsConfig {
   apiKey: string;
+  mapAvailable?: boolean;
+  mensaje?: string | null;
   centro: { lat: number; lng: number; etiqueta: string };
   origenRuta: string;
 }

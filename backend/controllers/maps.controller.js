@@ -3,7 +3,8 @@ const { success, error } = require('../utils/response');
 
 exports.config = async (req, res, next) => {
   try {
-    return success(res, mapsService.getMapsConfig(), 'Configuración de mapas');
+    const data = await mapsService.getMapsConfig();
+    return success(res, data, 'Configuración de mapas');
   } catch (e) {
     return error(res, e.message, 503);
   }

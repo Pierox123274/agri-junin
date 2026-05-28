@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, OnDestroy, PLATFORM_ID, computed } f
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthStateService } from '../../core/services/auth-state.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ClimaSyncPromptService } from '../../core/services/clima-sync-prompt.service';
 import { ClimaSyncModalComponent } from '../../shared/components/clima-sync-modal/clima-sync-modal.component';
 import { NAV_SECTIONS, NavItemConfig, NavSectionConfig } from '../../core/config/role-permissions';
@@ -18,6 +19,7 @@ const DESKTOP_BP = 992;
 export class MainLayoutComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   protected readonly auth = inject(AuthStateService);
+  private readonly authApi = inject(AuthService);
   private readonly climaPrompt = inject(ClimaSyncPromptService);
 
   protected readonly sidebarOpen = signal(true);
@@ -40,6 +42,12 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.resizeHandler = () => this.applyViewport();
     this.applyViewport();
     window.addEventListener('resize', this.resizeHandler);
+
+    if (this.auth.token()) {
+      this.authApi.loadProfile().subscribe({
+        error: () => this.auth.logout(),
+      });
+    }
 
     if (this.climaPrompt.shouldOpenOnLayout()) {
       this.climaPrompt.open();

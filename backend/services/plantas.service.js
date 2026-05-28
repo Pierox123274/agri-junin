@@ -25,20 +25,13 @@ const CATALOGO_LOCAL = [
   { nombre: 'Arroz', nombre_cientifico: 'Oryza sativa', tipo: 'cereal', familia: 'Poaceae' },
 ];
 
-const getToken = () => {
-  const token = (
+const getToken = () =>
+  (
     process.env.TREFLE_API_TOKEN ||
     process.env.TREFLE_TOKEN ||
     process.env.PERENUAL_API_KEY ||
     ''
   ).trim();
-  if (!token) {
-    throw new Error(
-      'TREFLE_API_TOKEN no configurada. Agregue su token en backend/.env y reinicie el servidor.'
-    );
-  }
-  return token;
-};
 
 const fetchJson = (url) =>
   new Promise((resolve, reject) => {
@@ -146,6 +139,7 @@ const buscarTrefleUna = async (term, token) => {
 
 const buscarTrefle = async (q, limit) => {
   const token = getToken();
+  if (!token) return [];
   const terminos = [q, ...(SINONIMOS_BUSQUEDA[q.toLowerCase()] || [])];
   const items = [];
   for (const term of terminos) {
@@ -175,10 +169,16 @@ const buscarEspecies = async (query, perPage = 8) => {
   const limit = Math.min(perPage, 12);
   const local = buscarLocal(q);
   let trefle = [];
+  let avisoTrefle = null;
   try {
     trefle = await buscarTrefle(q, limit);
   } catch (e) {
-    if (!local.length) throw e;
+    const msg = String(e.message || '');
+    if (/401|403|expir|invalid|token|HTTP 4/i.test(msg)) {
+      avisoTrefle = 'Trefle no disponible (token expirado o inválido). Usando catálogo local.';
+    } else if (!local.length) {
+      throw e;
+    }
   }
 
   const merged = dedupe([...local, ...trefle]).slice(0, limit);
@@ -191,6 +191,7 @@ const buscarEspecies = async (query, perPage = 8) => {
     total: merged.length,
     resultados: merged,
     fuente: trefle.length ? 'Trefle.io + catálogo AgriJunín' : 'catálogo AgriJunín',
+    aviso: avisoTrefle,
   };
 };
 

@@ -18,6 +18,7 @@ export class DashboardComponent implements OnInit {
 
   readonly stats = this.dash.stats;
   readonly loading = this.dash.loading;
+  readonly error = this.dash.error;
 
   readonly maxProduccion = computed(() => {
     const data = this.stats()?.produccionSemanal ?? [];

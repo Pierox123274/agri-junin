@@ -4,6 +4,7 @@
 const https = require('https');
 
 const HUANCAYO_ORIGIN = '-12.06513,-75.20486';
+const CENTRO = { lat: -12.06513, lng: -75.20486, etiqueta: 'Huancayo, Junín' };
 
 const fetchJson = (url) =>
   new Promise((resolve, reject) => {
@@ -24,10 +25,18 @@ const fetchJson = (url) =>
       .on('error', reject);
   });
 
-const getApiKey = () => {
-  const key = process.env.GOOGLE_MAPS_API_KEY;
-  if (!key) throw new Error('GOOGLE_MAPS_API_KEY no está configurada en el servidor');
-  return key;
+const getApiKey = () => (process.env.GOOGLE_MAPS_API_KEY || '').trim();
+
+const validarClaveGoogle = async (key) => {
+  if (!key) return { ok: false, mensaje: 'GOOGLE_MAPS_API_KEY no configurada en backend/.env' };
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=Huancayo&key=${key}`;
+  const data = await fetchJson(url);
+  if (data.status === 'OK') return { ok: true };
+  const msg = data.error_message || data.status || 'Clave rechazada';
+  if (/expired|denied|invalid|disabled|billing/i.test(msg)) {
+    return { ok: false, mensaje: `Google Maps: ${msg}. Use coordenadas manuales en el formulario.` };
+  }
+  return { ok: false, mensaje: `Google Maps: ${msg}` };
 };
 
 const formatDirections = (data) => {
@@ -53,10 +62,12 @@ const formatDirections = (data) => {
   };
 };
 
-/** Ruta en auto desde Huancayo (Junín) hasta el punto del lote */
 const getDirectionsToLote = async (lat, lng) => {
-  const destination = `${lat},${lng}`;
   const key = getApiKey();
+  const check = await validarClaveGoogle(key);
+  if (!check.ok) throw new Error(check.mensaje);
+
+  const destination = `${lat},${lng}`;
   const url =
     `https://maps.googleapis.com/maps/api/directions/json?origin=${HUANCAYO_ORIGIN}` +
     `&destination=${encodeURIComponent(destination)}&mode=driving&language=es&key=${key}`;
@@ -72,6 +83,10 @@ const getDirectionsToLote = async (lat, lng) => {
 
 const reverseGeocode = async (lat, lng) => {
   const key = getApiKey();
+  const check = await validarClaveGoogle(key);
+  if (!check.ok) {
+    return { direccion: `${lat}, ${lng}`, place_id: null };
+  }
   const url =
     `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=es&key=${key}`;
   const data = await fetchJson(url);
@@ -84,10 +99,25 @@ const reverseGeocode = async (lat, lng) => {
   };
 };
 
-const getMapsConfig = () => ({
-  apiKey: getApiKey(),
-  centro: { lat: -12.06513, lng: -75.20486, etiqueta: 'Huancayo, Junín' },
-  origenRuta: HUANCAYO_ORIGIN,
-});
+const getMapsConfig = async () => {
+  const key = getApiKey();
+  const check = await validarClaveGoogle(key);
+  if (!check.ok) {
+    return {
+      apiKey: '',
+      mapAvailable: false,
+      mensaje: check.mensaje,
+      centro: CENTRO,
+      origenRuta: HUANCAYO_ORIGIN,
+    };
+  }
+  return {
+    apiKey: key,
+    mapAvailable: true,
+    mensaje: null,
+    centro: CENTRO,
+    origenRuta: HUANCAYO_ORIGIN,
+  };
+};
 
 module.exports = { getDirectionsToLote, reverseGeocode, getMapsConfig, HUANCAYO_ORIGIN };
