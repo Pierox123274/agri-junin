@@ -1,0 +1,111 @@
+<app-relation-banner
+  hint="El agricultor es el dueño de los lotes. En «Lotes» verá qué cultivo tiene en cada parcela."
+/>
+
+<app-page-header
+  title="Agricultores"
+  subtitle="Productores — cada uno puede tener varios lotes con distintos cultivos"
+  actionLabel="Nuevo agricultor"
+  [showAction]="auth.canEdit()"
+  (actionClick)="goNew()"
+/>
+
+<div class="toolbar card">
+  <input
+    type="search"
+    placeholder="Buscar por nombre, DNI o distrito..."
+    [ngModel]="searchTerm()"
+    (ngModelChange)="onSearch($event)"
+  />
+</div>
+
+@if (store.loading()) {
+  <p class="loading">Cargando...</p>
+} @else {
+  <div class="card table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>DNI</th>
+          <th>Nombres</th>
+          <th>Distrito</th>
+          <th>Hectáreas</th>
+          <th>Registro</th>
+          <th>Lotes</th>
+          <th>Cultivos en lotes (estado por parcela)</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of store.items(); track item.id) {
+          <tr>
+            <td>{{ item.dni }}</td>
+            <td>{{ item.nombres }} {{ item.apellidos }}</td>
+            <td>{{ item.distrito }}</td>
+            <td>{{ item.hectareas_totales }} ha</td>
+            <td>{{ item.fecha_registro | date:'dd/MM/yyyy' }}</td>
+            <td>
+              @if (item.total_lotes) {
+                <a [routerLink]="['/lotes']" [queryParams]="{ agricultor_id: item.id }" class="link-badge">
+                  {{ item.total_lotes }} lote(s)
+                </a>
+              } @else {
+                <span class="muted">Sin lotes</span>
+              }
+            </td>
+            <td class="lotes-cultivos-cell">
+              @if (item.lotes_cultivos?.length) {
+                <ul class="lotes-cultivos-list">
+                  @for (lc of item.lotes_cultivos; track lc.lote_id) {
+                    <li class="lotes-cultivos-list__item">
+                      <div class="lotes-cultivos-list__main">
+                        <span class="lotes-cultivos-list__cultivo">🌱 {{ lc.cultivo_nombre }}</span>
+                        <span class="badge" [class]="estadoClass(lc.estado)">{{ estadoLabel(lc.estado) }}</span>
+                      </div>
+                      <small class="lotes-cultivos-list__meta">
+                        @if (auth.canEdit()) {
+                          <a [routerLink]="['/lotes', lc.lote_id, 'editar']" class="lote-link">{{ lc.codigo_lote }}</a>
+                        } @else {
+                          <span>{{ lc.codigo_lote }}</span>
+                        }
+                        · {{ lc.lote_nombre }} · {{ lc.area_hectareas }} ha
+                      </small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <span class="muted">Sin lotes registrados</span>
+              }
+            </td>
+            <td>
+              <span class="badge" [class.badge--success]="item.activo" [class.badge--danger]="!item.activo">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="actions">
+              @if (auth.canEdit()) {
+                <a [routerLink]="['/agricultores', item.id, 'editar']" class="btn btn--outline btn--sm">Editar</a>
+              }
+              @if (auth.isAdmin()) {
+                <button class="btn btn--danger btn--sm" (click)="deleteItem(item.id!)">Eliminar</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="9" class="empty">No hay agricultores registrados</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (store.pagination().totalPages > 1) {
+    <div class="pagination">
+      <button class="btn btn--outline btn--sm" [disabled]="store.pagination().page <= 1"
+        (click)="store.setPage(store.pagination().page - 1)">Anterior</button>
+      <span>Página {{ store.pagination().page }} de {{ store.pagination().totalPages }}</span>
+      <button class="btn btn--outline btn--sm" [disabled]="store.pagination().page >= store.pagination().totalPages"
+        (click)="store.setPage(store.pagination().page + 1)">Siguiente</button>
+    </div>
+  }
+}
