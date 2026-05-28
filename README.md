@@ -1,6 +1,8 @@
-# Sistema Web de Agricultura Inteligente — Región Junín
+# Sistema Web de Agricultura Inteligente — Región Junín (AgriJunín)
 
-Plataforma Full Stack profesional para gestión de agricultores, cultivos, lotes, sensores IoT, monitoreo ambiental y alertas inteligentes.
+Plataforma Full Stack para gestión de agricultores, cultivos, lotes, sensores IoT, monitoreo ambiental y alertas inteligentes.
+
+**Repositorio:** [github.com/Pierox123274/agri-junin](https://github.com/Pierox123274/agri-junin)
 
 ## Stack tecnológico
 
@@ -10,65 +12,88 @@ Plataforma Full Stack profesional para gestión de agricultores, cultivos, lotes
 | Backend | Node.js, Express.js, JWT, MVC |
 | Base de datos | MySQL 8+ con integridad referencial |
 
-## Estructura del proyecto
-
-```
-PROYECTO-FINAL-ING-WEB/
-├── backend/          # API REST Node.js
-│   ├── controllers/
-│   ├── routes/
-│   ├── middleware/
-│   ├── services/
-│   ├── config/
-│   └── database/     # schema.sql, seeds
-├── frontend/         # Angular 20
-│   └── src/app/
-│       ├── core/     # guards, interceptors, auth
-│       ├── shared/   # componentes reutilizables
-│       ├── layouts/  # sidebar + navbar
-│       ├── pages/    # CRUD por módulo
-│       └── dashboard/
-└── README.md
-```
-
 ## Requisitos previos
 
 - Node.js 20+
-- MySQL 8+
+- MySQL 8+ (o MariaDB 10.4+)
 - npm
+- Git (opcional, para clonar)
 
-## Instalación
+## Instalación rápida
 
-### 1. Base de datos
+### 1. Clonar el proyecto
 
 ```bash
-# Opción A: Ejecutar SQL manualmente
+git clone https://github.com/Pierox123274/agri-junin.git
+cd agri-junin
+```
+
+### 2. Configurar entorno (automático en Windows)
+
+```powershell
+.\setup.ps1
+```
+
+Esto crea `backend/.env` desde `.env.example`, instala dependencias de backend y frontend.
+
+**Manual (cualquier SO):**
+
+```bash
+cp backend/.env.example backend/.env   # Windows: copy backend\.env.example backend\.env
+```
+
+Edite `backend/.env` con:
+
+- Contraseña de MySQL (`DB_PASSWORD`)
+- `TREFLE_API_TOKEN` — [Trefle.io](https://trefle.io/) (nombres científicos de cultivos)
+- `GOOGLE_MAPS_API_KEY` — Google Cloud (mapas al registrar lotes)
+- `APISPERU_DNI_TOKEN` — opcional (validación de DNI en registro)
+
+### 3. Base de datos
+
+**Opción recomendada — script único:**
+
+```bash
+mysql -u root -p < backend/database/agri_junin_completo.sql
+```
+
+Incluye estructura + datos demo. Contraseña de usuarios demo: `Admin123!`
+
+Si el login no funciona tras importar:
+
+```bash
+cd backend
+node database/fix-passwords.js
+```
+
+**Opción por partes:**
+
+```bash
 mysql -u root -p < backend/database/schema.sql
 mysql -u root -p < backend/database/seeds.sql
-
-# Opción B: Seed automático con bcrypt
-cd backend
-npm install
-cp .env.example .env   # Editar credenciales MySQL
-npm run seed
+cd backend && node database/fix-passwords.js
 ```
 
-### 2. Backend
+**BD ya existente (migraciones):**
 
 ```bash
 cd backend
-npm install
-npm run dev
-# API: http://localhost:3000/api
+node database/migrate-alertas-origen.js
+node database/migrate-lotes-aprobacion.js
+# ... otras migrate-*.js según necesidad
 ```
 
-### 3. Frontend
+### 4. Ejecutar la aplicación
+
+```powershell
+.\start.ps1
+```
+
+O por separado:
 
 ```bash
-cd frontend
-npm install
-ng serve
-# App: http://localhost:4200
+cd backend && npm run dev    # http://localhost:3000/api
+cd frontend && npx ng serve  # http://localhost:4200
 ```
 
 ## Credenciales de prueba
@@ -77,7 +102,9 @@ ng serve
 |-------|------------|-----|
 | admin@agrijunin.pe | Admin123! | administrador |
 | maria.quispe@agrijunin.pe | Admin123! | agricultor |
-| ana.tello@agrijunin.pe | Admin123! | tecnico |
+| juan.rojas@agrijunin.pe | Admin123! | agricultor |
+| ana.tello@agrijunin.pe | Admin123! | técnico |
+| pedro.huaman@agrijunin.pe | Admin123! | técnico |
 
 ## API REST (endpoints principales)
 
@@ -86,30 +113,35 @@ ng serve
 | POST | `/api/auth/login` | Inicio de sesión |
 | POST | `/api/auth/register` | Registro |
 | GET | `/api/dashboard/stats` | KPIs del dashboard |
-| GET | `/api/clima/huancayo` | Clima real Huancayo (Open-Meteo) |
+| GET | `/api/clima/huancayo` | Clima Huancayo (Open-Meteo) |
 | POST | `/api/clima/sincronizar` | Sincroniza clima → registros, sensores y alertas |
-| CRUD | `/api/agricultores` | Gestión agricultores |
-| CRUD | `/api/cultivos` | Catálogo cultivos |
-| CRUD | `/api/lotes` | Lotes agrícolas |
-| CRUD | `/api/sensores` | Sensores IoT |
-| CRUD | `/api/registros` | Registros de monitoreo |
-| CRUD | `/api/alertas` | Alertas inteligentes |
+| GET | `/api/plantas/buscar?q=` | Búsqueda nombres científicos (Trefle) |
+| CRUD | `/api/agricultores`, `/cultivos`, `/lotes`, `/sensores`, `/registros`, `/alertas` | Módulos del sistema |
 
-## Roles y permisos
+## Roles
 
-- **Administrador**: acceso total, eliminar registros
-- **Técnico**: crear y editar datos de campo
-- **Agricultor**: consulta y visualización
+- **Administrador:** acceso total, aprobar técnicos y solicitudes
+- **Técnico:** gestión de campo, aprobar lotes/cultivos de agricultores
+- **Agricultor:** sus lotes, cultivos, clima y alertas
 
-## Escalabilidad futura
+## Estructura del proyecto
 
-El sistema está preparado para integrar:
+```
+agri-junin/
+├── backend/          # API REST Node.js
+│   ├── database/     # schema.sql, seeds.sql, agri_junin_completo.sql
+│   ├── services/
+│   └── src/
+├── frontend/         # Angular 20
+├── setup.ps1         # Configuración inicial
+└── start.ps1         # Arranque backend + frontend
+```
 
-- Sensores IoT reales (MQTT/WebSocket)
-- APIs meteorológicas
-- Machine Learning / predicción de cosechas
-- Exportación PDF / Excel
-- Notificaciones push
+## Seguridad
+
+- **No suba** `backend/.env` a GitHub (contiene claves secretas).
+- Use `.env.example` como plantilla.
+- Cambie `JWT_SECRET` en producción.
 
 ## Autor
 
