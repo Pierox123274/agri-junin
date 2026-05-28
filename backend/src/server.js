@@ -45,12 +45,25 @@ app.use(
   })
 );
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', async (_req, res) => {
+  let db = 'ok';
+  try {
+    const { pool } = require('../config/database');
+    await pool.query('SELECT 1');
+  } catch {
+    db = 'error';
+  }
   res.json({
-    success: true,
+    success: db === 'ok',
     message: 'API Agricultura Inteligente Junín operativa',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
+    database: db,
+    integrations: {
+      trefle: Boolean(process.env.TREFLE_API_TOKEN?.trim()),
+      googleMaps: Boolean(process.env.GOOGLE_MAPS_API_KEY?.trim()),
+      apisPeruDni: Boolean(process.env.APISPERU_DNI_TOKEN?.trim()),
+    },
   });
 });
 

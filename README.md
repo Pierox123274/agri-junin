@@ -83,7 +83,22 @@ node database/migrate-lotes-aprobacion.js
 # ... otras migrate-*.js según necesidad
 ```
 
-### 4. Ejecutar la aplicación
+### 4. Ejecutar la aplicación (recomendado)
+
+```powershell
+.\ejecutar.ps1
+```
+
+Hace todo automáticamente: `.env`, contraseñas demo, backend, verificación de APIs/BD y frontend.
+
+Verificar sin abrir navegador:
+
+```bash
+cd backend
+npm run verify
+```
+
+Alternativa rápida:
 
 ```powershell
 .\start.ps1

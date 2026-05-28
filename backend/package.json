@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node database/seed-runner.js",
-    "fix-passwords": "node database/fix-passwords.js"
+    "fix-passwords": "node database/fix-passwords.js",
+    "verify": "node scripts/verificar-sistema.js"
   },
   "keywords": ["agricultura", "iot", "junin", "api"],
   "author": "Proyecto Final Ing. Web",

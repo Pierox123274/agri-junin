@@ -19,7 +19,7 @@ Write-Host "Backend iniciando en http://localhost:3000"
 Start-Sleep -Seconds 3
 
 # Frontend
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\frontend'; npx ng serve --open"
-Write-Host "Frontend iniciando en http://localhost:4200"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\frontend'; npx ng serve --host 127.0.0.1 --port 4200 --open"
+Write-Host "Frontend iniciando en http://127.0.0.1:4200"
 Write-Host ""
 Write-Host "Login: admin@agrijunin.pe / Admin123!" -ForegroundColor Cyan
